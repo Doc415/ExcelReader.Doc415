@@ -6,7 +6,7 @@ namespace ExcelReader.Doc415;
 internal class ExcelFileHandler
 {
     static ExcelWorksheet _sheet;
-    public static List<string> _colNames=new();
+    public static List<string> _colNames = new();
     static List<dynamic> rows;
 
     public List<string> GetColumnNames()
@@ -19,6 +19,7 @@ internal class ExcelFileHandler
         int i = 1;
         string? colName = null;
         bool finished = false;
+        Console.WriteLine("Getting column names from Excel data");
         do
         {
             try
@@ -35,18 +36,21 @@ internal class ExcelFileHandler
             }
 
         } while (!finished);
+        Console.WriteLine($"Sending {_colNames.Count()} column names to ImportService");
         return _colNames;
 
     }
 
     public List<dynamic> GetRows()
     {
+        Console.WriteLine("Reading row data from worksheet.");
         rows = new();
-        for (int i = 2; i <= _sheet.Dimension.End.Row;i++)
+        for (int i = 2; i <= _sheet.Dimension.End.Row; i++)
         {
             dynamic? row = ReadRow(_sheet, i);
             rows.Add(row);
         }
+        Console.WriteLine("Sending row data to Import service.");
         return rows;
 
     }
@@ -69,7 +73,7 @@ internal class ExcelFileHandler
     }
 
 
-    static string MakeValidSqlColumnName(string input) 
+    static string MakeValidSqlColumnName(string input)
     {
         string sanitized = Regex.Replace(input, "[^a-zA-Z0-9_]", "");
         if (char.IsDigit(sanitized[0]))

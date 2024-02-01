@@ -1,7 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Dynamic;
-using static OfficeOpenXml.ExcelErrorValue;
 
 namespace ExcelReader.Doc415;
 
@@ -9,21 +8,22 @@ internal class DbHandler
 {
     private string _connectionStringToDbUpdate = "Server=(localdb)\\MSSQLLocalDB; Integrated Security=true;";
     private string _connectionString = "Server=(localdb)\\MSSQLLocalDB;Initial Catalog=exceltodb; Integrated Security=true;";
-    public DbHandler()
+    public void PrepareDatabase()
     {
         using (var connection = new SqlConnection(_connectionStringToDbUpdate))
         {
             connection.Open();
+            Console.WriteLine("Deleting existing Db");
             try
             {
                 string deleteDatabase = @"DROP DATABASE IF EXISTS exceltodb;";
                 connection.Execute(deleteDatabase);
-                Console.Write("db deleted");
+                Console.WriteLine("Db deleted");
                 connection.Close();
             }
             catch
             {
-                Console.WriteLine("no db to delete");
+                Console.WriteLine("No db to delete");
             }
         }
 
@@ -31,6 +31,7 @@ internal class DbHandler
 
     public void CreateDBTable(List<string> columnNames)
     {
+        Console.WriteLine("Creating new Db and Table" );
         using (var connection = new SqlConnection(_connectionStringToDbUpdate))
         {
             connection.Open();
@@ -53,12 +54,10 @@ internal class DbHandler
 
     public void InsertRowsToDb(List<dynamic> rows)
     {
+        Console.WriteLine("Inserting data to Db");
         var InsertData = MapRowsToQueryValues(rows);
         using (var connection = new SqlConnection(_connectionString))
         {
-            string createTable = "";
-           
-
             foreach (var column in InsertData.Item2)
             {
                 string insertQuery = $"INSERT INTO exceldata ({InsertData.Item1}) VALUES ({column})";
@@ -67,27 +66,63 @@ internal class DbHandler
         }
     }
 
-    private (string,List<string>) MapRowsToQueryValues(List<dynamic> rows)
+    private (string, List<string>) MapRowsToQueryValues(List<dynamic> rows)
     {
         List<string> queryValues = new();
-        string columnNamesForQuery = string.Join(",",ExcelFileHandler._colNames).TrimEnd(',');
-        
-        foreach (var  row in rows)
+        string columnNamesForQuery = string.Join(",", ExcelFileHandler._colNames).TrimEnd(',');
+
+        foreach (var row in rows)
         {
             string values = "";
             var propertyBag = (IDictionary<string, object>)row;
             foreach (var property in propertyBag)
             {
-                values += "'"+property.Value +"'"+ ",";
+                values += "'" + property.Value + "'" + ",";
 
             }
-            values=values.TrimEnd(',');
+            values = values.TrimEnd(',');
             queryValues.Add(values);
         }
         return (columnNamesForQuery, queryValues);
     }
 
+    public IEnumerable<dynamic> GetDbData()
+    {
+        IEnumerable<dynamic> data = new List<dynamic>();
+        using var connection = new SqlConnection(_connectionString);
+        string query = "SELECT * FROM exceldata";
+        var command=new SqlCommand(query, connection);
+        connection.Open();
+        using var reader=command.ExecuteReader();
+        while (reader.Read())
+        {
+            IDictionary<string, object> row = new Dictionary<string, object>();
 
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                string columnName = reader.GetName(i);
+                object value = reader.GetValue(i);
+
+                row[columnName] = value;
+            }
+
+            yield return CreateDynamicObject(row);
+        }
+        connection.Close();
+    }
+
+    public static dynamic CreateDynamicObject(IDictionary<string, object> properties)
+    {
+        ExpandoObject expandoObject = new ExpandoObject();
+        var expandoDict = (IDictionary<string, object>)expandoObject;
+
+        foreach (var property in properties)
+        {
+            expandoDict[property.Key] = property.Value;
+        }
+
+        return expandoObject;
+    }    
 }
 
 
