@@ -1,13 +1,11 @@
-﻿using System.Dynamic;
-
-namespace ExcelReader.Doc415;
+﻿namespace ExcelReader.Doc415;
 
 internal class ImportExcelService
 {
-    public void ImportExcelToDb()
+    public void ImportExcelToDb(string excelFile)
     {
         DbHandler _db = new();
-        ExcelFileHandler _fileHandler = new ExcelFileHandler();
+        ExcelFileHandler _fileHandler = new ExcelFileHandler(excelFile);
         _db.PrepareDatabase();
         _db.CreateDBTable(_fileHandler.GetColumnNames());
         var rows = _fileHandler.GetRows();

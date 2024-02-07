@@ -8,19 +8,24 @@ internal class ExcelFileHandler
     static ExcelWorksheet _sheet;
     public static List<string> _colNames = new();
     static List<dynamic> rows;
+    private string _excelFile;
+
+    public ExcelFileHandler(string excelFile)
+    {
+        _excelFile = excelFile;
+    }
 
     public List<string> GetColumnNames()
     {
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-        FileInfo fi = new FileInfo("esd.xlsx");
+        FileInfo fi = new FileInfo(_excelFile);
         ExcelPackage excelPackage = new ExcelPackage(fi);
         _sheet = excelPackage.Workbook.Worksheets[0];
-
-        int i = 1;
+        
         string? colName = null;
         bool finished = false;
         Console.WriteLine("Getting column names from Excel data");
-        do
+        for (int i=1;i<= _sheet.Dimension.End.Column;i++)
         {
             try
             {
@@ -28,14 +33,14 @@ internal class ExcelFileHandler
                 colName = MakeValidSqlColumnName(colName);
                 _colNames.Add(colName);
                 _sheet.Cells[1, i].Value = colName;
-                i++;
+             
             }
             catch
             {
                 finished = true;
             }
 
-        } while (!finished);
+        }
         Console.WriteLine($"Sending {_colNames.Count()} column names to ImportService");
         return _colNames;
 

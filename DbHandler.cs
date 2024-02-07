@@ -31,7 +31,7 @@ internal class DbHandler
 
     public void CreateDBTable(List<string> columnNames)
     {
-        Console.WriteLine("Creating new Db and Table" );
+        Console.WriteLine("Creating new Db and Table");
         using (var connection = new SqlConnection(_connectionStringToDbUpdate))
         {
             connection.Open();
@@ -88,12 +88,11 @@ internal class DbHandler
 
     public IEnumerable<dynamic> GetDbData()
     {
-        IEnumerable<dynamic> data = new List<dynamic>();
         using var connection = new SqlConnection(_connectionString);
         string query = "SELECT * FROM exceldata";
-        var command=new SqlCommand(query, connection);
+        var command = new SqlCommand(query, connection);
         connection.Open();
-        using var reader=command.ExecuteReader();
+        using var reader = command.ExecuteReader();
         while (reader.Read())
         {
             IDictionary<string, object> row = new Dictionary<string, object>();
@@ -122,7 +121,7 @@ internal class DbHandler
         }
 
         return expandoObject;
-    }    
+    }
 }
 
 
